@@ -75,7 +75,7 @@
 
     <TableRow
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_margin="5dp"
         android:padding="5dp">
 
@@ -84,6 +84,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:onClick="registrarUsuario"
             android:text="@string/btnRegistrar"
             android:textSize="16dp" />
 
@@ -100,12 +101,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:onClick="listarUsuarios"
             android:text="@string/btnListarRegistros"
             android:textSize="16dp" />
+
     </TableRow>
 
-    <androidx.recyclerview.widget.RecyclerView
+    <ListView
         android:id="@+id/lvLista"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content">
+
+    </ListView>
+
 </LinearLayout>

@@ -52,9 +52,9 @@ public class Usuario {
     public String toString() {
         return
                 "Documento: " + documento +
-                "\nUsuario: " + usuario +
-                "\nNombres: " + nombres +
-                "\nApellidos: " + apellidos +
-                "\nContraseña: " + contrasena;
+                        "\nUsuario: " + usuario +
+                        "\nNombres: " + nombres +
+                        "\nApellidos: " + apellidos +
+                        "\nContraseña: " + contrasena;
     }
 }

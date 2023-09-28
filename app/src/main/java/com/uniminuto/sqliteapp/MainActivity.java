@@ -2,18 +2,23 @@ package com.uniminuto.sqliteapp;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-
-import com.google.android.material.snackbar.Snackbar;
+import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -28,12 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText etNombres;
     private EditText etApellidos;
     private EditText etContrasena;
-    private Button btnRegistrar;
-    private Button btnBuscar;
     private ListView lvLista;
-    private Button btnListarRegistros;
-    private GestionDB gestionDB;
-    private SQLiteDatabase baseDatos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,26 +52,112 @@ public class MainActivity extends AppCompatActivity {
         this.listarUsuarios(lvLista);
     }
 
-    public void setDatos() {
-        // Regex
-        this.documento = Integer.parseInt(etDocumento.getText().toString());
-        this.usuario = etUsuario.getText().toString();
-        this.nombres = etNombres.getText().toString();
-        this.apellidos = etApellidos.getText().toString();
-        this.contrasena = etContrasena.getText().toString();
+    // Regex
+    public int regexNoNulls(String valueView) {
+        Pattern patronNoNull = Pattern.compile(".+");
+        Matcher matcherNoNull = patronNoNull.matcher(valueView);
+
+        return (matcherNoNull.matches()) ? 0 : -1;
+    }
+
+    public int regexNoNumbers(String valueView) {
+        Pattern patronNumeros = Pattern.compile("\\d+");
+        Matcher matcherNumeros = patronNumeros.matcher(valueView);
+
+        return (matcherNumeros.matches()) ? 0 : -2;
+    }
+
+    public String setDatos() {
+        // nombreCampo, respuestaRegex
+        HashMap<String, Integer> responseRegex = new HashMap<String, Integer>();
+
+        // Validar que no hayan campos vacios
+        responseRegex.put("DOCUMENTO", regexNoNulls(etDocumento.getText().toString()));
+        responseRegex.put("USUARIO", regexNoNulls(etUsuario.getText().toString()));
+        responseRegex.put("NOMBRES", regexNoNulls(etNombres.getText().toString()));
+        responseRegex.put("APELLIDOS", regexNoNulls(etApellidos.getText().toString()));
+        responseRegex.put("CONTRASEÑA", regexNoNulls(etContrasena.getText().toString()));
+
+        // Validar que el documento contenga solo números
+        responseRegex.put("DOCUMENTO", regexNoNumbers(etDocumento.getText().toString()));
+
+        Iterator<Map.Entry<String, Integer>> iterator = responseRegex.entrySet().iterator();
+        Map.Entry<String, Integer> value;
+
+        while (iterator.hasNext()) {
+            value = iterator.next();
+            if (value.getValue() != 0) {
+                switch (value.getValue()) {
+                    case -1:
+                        return "El campo " + value.getKey() + " No puede estar vacio";
+                    case -2:
+                        return "El campo " + value.getKey() + " Solo debe contener números";
+                }
+            }
+        }
+
+        if (!iterator.hasNext()) {
+            this.documento = Integer.parseInt(etDocumento.getText().toString());
+            this.usuario = etUsuario.getText().toString();
+            this.nombres = etNombres.getText().toString();
+            this.apellidos = etApellidos.getText().toString();
+            this.contrasena = etContrasena.getText().toString();
+            return "OK VALIDATIONS";
+        }
+        return null;
     }
 
     public void registrarUsuario(View view) {
-        setDatos();
-        UsuarioDao usuarioDao = new UsuarioDao(this, view);
-        Usuario usuario1 = new Usuario();
-        usuario1.setDocumento(this.documento);
-        usuario1.setUsuario(this.usuario);
-        usuario1.setNombres(this.nombres);
-        usuario1.setApellidos(this.apellidos);
-        usuario1.setContrasena(this.contrasena);
-        usuarioDao.insertarUsuario(usuario1);
-        this.listarUsuarios(lvLista);
+        if (setDatos().equals("OK VALIDATIONS")) {
+            Usuario usuario1 = new Usuario();
+            usuario1.setDocumento(this.documento);
+            usuario1.setUsuario(this.usuario);
+            usuario1.setNombres(this.nombres);
+            usuario1.setApellidos(this.apellidos);
+            usuario1.setContrasena(this.contrasena);
+            UsuarioDao usuarioDao = new UsuarioDao(this, view);
+            usuarioDao.insertarUsuario(usuario1);
+            this.listarUsuarios(lvLista);
+        } else {
+            Toast.makeText(this, setDatos(), Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    public void actualizarUsuario(View view) {
+        if (setDatos().equals("OK VALIDATIONS")) {
+            Usuario usuario1 = new Usuario();
+            usuario1.setDocumento(this.documento);
+            usuario1.setUsuario(this.usuario);
+            usuario1.setNombres(this.nombres);
+            usuario1.setApellidos(this.apellidos);
+            usuario1.setContrasena(this.contrasena);
+            UsuarioDao usuarioDao = new UsuarioDao(this, view);
+            usuarioDao.actualizarUsuario(usuario1);
+            this.buscarUsuario(view);
+        } else {
+            Toast.makeText(this, setDatos(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void buscarUsuario(View view) {
+        if (regexNoNulls(etDocumento.getText().toString()) == 0) {
+            this.documento = Integer.parseInt(etDocumento.getText().toString());
+            UsuarioDao usuarioDao = new UsuarioDao(this, findViewById(R.id.lvLista));
+            ArrayList<Usuario> user = usuarioDao.buscarByDocumento(this.documento);
+
+            lvLista.setAdapter(null);
+            etUsuario.setText(user.get(0).getUsuario());
+            etNombres.setText(user.get(0).getNombres());
+            etApellidos.setText(user.get(0).getApellidos());
+            etContrasena.setText(user.get(0).getContrasena());
+
+            ArrayAdapter<Usuario> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, user);
+            lvLista.setAdapter(adapter);
+        } else {
+            Toast.makeText(this, "El campo DOCUMENTO No puede estar vacio", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     public void listarUsuarios(View view) {
